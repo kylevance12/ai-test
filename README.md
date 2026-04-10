@@ -1,0 +1,2 @@
+mtcars
+table(mtcars$mpg)
