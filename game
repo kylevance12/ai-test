@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>404 - Dig Your Way Out!</title>
+    <style>
+        body { background: #111; color: white; font-family: 'Courier New', Courier, monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
+        h1 { margin: 10px 0; font-size: 2rem; color: #ffcc00; }
+        canvas { background: #332211; border: 4px solid #553311; image-rendering: pixelated; max-width: 90vw; max-height: 70vh; }
+        .controls { margin-top: 15px; font-size: 0.9rem; color: #aaa; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <h1>404 - PAGE BURIED!</h1>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div class="controls">
+        Use <b>ARROW KEYS</b> to dig. Don't let the Pookas catch you! <br>
+        (Refresh to restart)
+    </div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Game Settings
+const TILE_SIZE = 20;
+const COLS = 30;
+const ROWS = 20;
+canvas.width = COLS * TILE_SIZE;
+canvas.height = ROWS * TILE_SIZE;
+
+// 0 = Dirt, 1 = Tunnel
+let grid = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+
+const player = { x: 1, y: 1, color: '#ffcc00' };
+const enemies = [
+    { x: 15, y: 10, color: '#ff4444', dx: 1, dy: 0 },
+    { x: 5, y: 15, color: '#ff4444', dx: 0, dy: 1 }
+];
+
+// Initial tunnel at start
+grid[player.y][player.x] = 1;
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw Dirt and Tunnels
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            if (grid[r][c] === 0) {
+                ctx.fillStyle = '#884422'; // Dirt color
+                ctx.fillRect(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                // Add some "grain" to dirt
+                ctx.fillStyle = '#773311';
+                ctx.fillRect(c * TILE_SIZE + 5, r * TILE_SIZE + 5, 2, 2);
+            } else {
+                ctx.fillStyle = '#000'; // Tunnel color
+                ctx.fillRect(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            }
+        }
+    }
+
+    // Draw Player
+    ctx.fillStyle = player.color;
+    ctx.fillRect(player.x * TILE_SIZE + 2, player.y * TILE_SIZE + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+
+    // Draw & Move Enemies
+    enemies.forEach(enemy => {
+        ctx.fillStyle = enemy.color;
+        ctx.beginPath();
+        ctx.arc(enemy.x * TILE_SIZE + TILE_SIZE/2, enemy.y * TILE_SIZE + TILE_SIZE/2, TILE_SIZE/2 - 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Simple Enemy AI: Stay in tunnels or occasionally "ghost"
+        if (Math.random() < 0.05) { // Change direction
+            const dirs = [[1,0], [-1,0], [0,1], [0,-1]];
+            const d = dirs[Math.floor(Math.random() * dirs.length)];
+            enemy.dx = d[0]; enemy.dy = d[1];
+        }
+
+        let nextX = enemy.x + enemy.dx;
+        let nextY = enemy.y + enemy.dy;
+
+        // Bounce off edges
+        if (nextX < 0 || nextX >= COLS || nextY < 0 || nextY >= ROWS) {
+            enemy.dx *= -1; enemy.dy *= -1;
+        } else {
+            enemy.x = nextX;
+            enemy.y = nextY;
+        }
+
+        // Collision Check
+        if (enemy.x === player.x && enemy.y === player.y) {
+            alert("Game Over! You were caught.");
+            location.reload();
+        }
+    });
+}
+
+// Input Handling
+window.addEventListener('keydown', e => {
+    let newX = player.x;
+    let newY = player.y;
+
+    if (e.key === 'ArrowUp') newY--;
+    if (e.key === 'ArrowDown') newY++;
+    if (e.key === 'ArrowLeft') newX--;
+    if (e.key === 'ArrowRight') newX++;
+
+    // Bound check
+    if (newX >= 0 && newX < COLS && newY >= 0 && newY < ROWS) {
+        player.x = newX;
+        player.y = newY;
+        grid[player.y][player.x] = 1; // "Dig" the tunnel
+    }
+    draw();
+});
+
+// Initial draw
+draw();
+// Simple game loop for enemies
+setInterval(draw, 200);
+
+</script>
+</body>
+</html>
